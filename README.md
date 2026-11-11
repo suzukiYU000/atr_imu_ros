@@ -1,13 +1,13 @@
 # atr_imu_ros
 
-ATR-Promotions **AMWS020**をLinuxからBluetooth SPPで読み出す、複数IMU対応のROSセンサドライバーです。ペアリング済み機器へ自動接続し、加速度・角速度を `sensor_msgs/Imu` で配信します。メーカー公式ドライバーではありません。
+ATR-Promotions **AMWS020 / TSND151**をLinuxからBluetooth SPPで読み出す、複数IMU対応のROSセンサドライバーです。ペアリング済み機器へ自動接続し、加速度・角速度を `sensor_msgs/Imu` で配信します。メーカー公式ドライバーではありません。
 
 | ブランチ | 対象 | ビルド |
 |---|---|---|
 | `ros2-jazzy`（このブランチ） | ROS 2 Jazzy / Python 3.12 | colcon / ament_python |
 | `ros1-noetic` | ROS 1 Noetic / Python 3.8 | catkin |
 
-AMWS020Bの通信仕様を対象とします。TSND121/TSND151への対応は主張しません。
+AMWS020BおよびTSND151の加速度・角速度プロトコルを実装しています。AMWS020Bは実測確認済み、TSND151は機器情報取得まで確認済みで、実データ配信は接続エラーのため未確認です。TSND121、生体信号、地磁気の配信は対象外です。
 
 ## 機能
 
@@ -20,7 +20,7 @@ AMWS020Bの通信仕様を対象とします。TSND121/TSND151への対応は主
 
 ## セットアップ
 
-LinuxのBluetoothアダプターとBlueZが必要です。Bluetooth設定画面でセンサを一度ペアリングし、十分に充電して電源を入れてください。**ペアリング操作や電源投入自体は自動化しません。** 自動検出はBlueZに登録済み・ペアリング済みの `AMWS020_*` が対象です。未登録機器の探索はOS側で行います。
+LinuxのBluetoothアダプターとBlueZが必要です。Bluetooth設定画面でセンサを一度ペアリングし、十分に充電して電源を入れてください。**ペアリング操作や電源投入自体は自動化しません。** 自動検出はBlueZに登録済み・ペアリング済みの `AMWS020_*` / `TSND151-*` が対象です。未登録機器の探索はOS側で行います。
 
 ```sh
 mkdir -p ~/imu_ws/src
@@ -78,19 +78,21 @@ sensors:
 ros2 launch atr_imu_ros imu.launch.py config_file:=/absolute/path/to/sensors.yaml
 ```
 
-`auto_discover: true` と明示設定を併用すると、明示機器の名前を優先し、その他のペアリング済みAMWS020も追加します。特定機器だけを使う場合は `false` にしてください。センサ名とframe_idは重複させないでください。
+`auto_discover: true` と明示設定を併用すると、明示機器の名前を優先し、その他のペアリング済みAMWS020 / TSND151も追加します。特定機器だけを使う場合は `false` にしてください。センサ名とframe_idは重複させないでください。
 
 | 設定 | 初期値 | 説明 |
 |---|---|---|
-| `auto_discover` | `true` | ペアリング済みAMWS020の自動追加 |
+| `auto_discover` | `true` | ペアリング済みAMWS020 / TSND151の自動追加 |
 | `adapter` | `hci0` | BlueZ登録機器の検索対象。RFCOMM送信経路はOSが選択 |
 | `sample_period_ms` | `10` | 1〜255 ms。10 ms = 100 Hz |
-| `rfcomm_channel` | `2` | AMWS020Bで確認したSPPチャネル |
+| `rfcomm_channel` | `0` | 個別channel未指定時の既定値。0はSDP取得、1〜30で固定指定 |
 | `read_timeout` | `5.0` | 通信・データ待機タイムアウト秒 |
 | `reconnect_delay` | `3.0` | 接続失敗後の再試行間隔秒 |
 | `discovery_interval` | `5.0` | 登録機器一覧を見直す間隔秒 |
 | `topic_prefix` | `imu` | データトピックの接頭辞 |
 | `sensors` | `[]` | 明示接続する機器リスト |
+
+自動検出機器は名前からモデルを識別し、実機で確認したSPPチャネル（AMWS020B: 2、TSND151: 1）を選びます。`sensors` の各機器に `channel: 1` のように個別指定することもできます。明示設定した機器でチャネルを指定しない場合は、BlueZの `sdptool` でSPPチャネルを取得します。自動検出機器には反復的なSDP問い合わせを行いません。
 
 設定は起動時に読み込みます。変更後はノードを再起動してください。実行中の動的パラメーター変更には対応していません。
 
@@ -125,6 +127,7 @@ python3 test/ros2_smoke.py
 ## 仕様・権利
 
 - [AMWS020コマンド仕様 v1.03](https://www.atr-p.com/products/AMWS020/manuals/amws020_command_manual_v103.pdf)
+- [TSND151コマンド仕様（2016-06-28）](https://www.atr-p.com/products/pdf/TSND151-cmd-spec.pdf)
 - [AMWS020ユーザーマニュアル v1.04](https://www.atr-p.com/products/AMWS020/manuals/amws020_users_manual_v104.pdf)
 - ROS `sensor_msgs/Imu` の単位・共分散規約に従います。
 

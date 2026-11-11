@@ -21,7 +21,7 @@ class ImuNode(Node):
         self.manager = Manager(self.config,self.publish_sample,lambda:self.get_clock().now().nanoseconds)
         self.timer = self.create_timer(1.0,self.publish_diagnostics)
         self.manager.start()
-        self.get_logger().info('AMWS020 driver started; topic prefix: '+self.config['topic_prefix'])
+        self.get_logger().info('ATR IMU driver started; topic prefix: '+self.config['topic_prefix'])
 
     def publish_sample(self,device,stamp_ns,acc,gyro):
         with self.publisher_lock:

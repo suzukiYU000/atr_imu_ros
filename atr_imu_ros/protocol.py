@@ -1,6 +1,8 @@
-"""AMWS020 command protocol v1.03. No ROS dependencies."""
+"""AMWS020 v1.03 / TSND151 (2016-06-28) command protocol. No ROS dependencies."""
 import math
 import socket
+import re
+import subprocess
 import struct
 import time
 from functools import reduce
@@ -75,14 +77,28 @@ class SensorClock:
         self.previous = tick
         return self.stamp_ns
 
+def serial_channel(address, timeout=5.0):
+    """Resolve the device's Serial Port service instead of guessing its channel."""
+    result = subprocess.run(['sdptool','search','--bdaddr',address,'SP'],
+                            capture_output=True,text=True,timeout=timeout)
+    channels = {int(x) for x in re.findall(r'Channel:\s*(\d+)',result.stdout)}
+    if result.returncode or len(channels) != 1:
+        raise ProtocolError('Cannot resolve a unique SPP channel; check power or set rfcomm_channel')
+    channel = channels.pop()
+    if not 1 <= channel <= 30:
+        raise ProtocolError('Invalid SPP channel')
+    return channel
+
 class Sensor:
-    def __init__(self, address, channel=2, timeout=5.0):
+    def __init__(self, address, channel=0, timeout=5.0):
         self.address, self.channel, self.timeout = address, channel, timeout
         self.sock = None
         self.parser = Parser()
         self.started = False
 
     def connect(self):
+        if not self.channel:
+            self.channel = serial_channel(self.address,self.timeout)
         self.sock = socket.socket(socket.AF_BLUETOOTH,socket.SOCK_STREAM,socket.BTPROTO_RFCOMM)
         self.sock.settimeout(self.timeout)
         self.sock.connect((self.address,self.channel))
@@ -118,10 +134,15 @@ class Sensor:
         raise TimeoutError('Command response timeout')
 
     def configure(self, period_ms):
-        info = self.request(0x10,0x90)
+        # Some TSND151 modules drop the first query while SPP becomes ready.
+        # Retry only this read-only handshake, never a mutating command.
+        try:
+            info = self.request(0x10,0x90,timeout=min(1.0,self.timeout))
+        except TimeoutError:
+            info = self.request(0x10,0x90)
         model = info[20:30].split(b'\x00')[0].decode('ascii')
         serial = info[:10].decode('ascii')
-        if not model.startswith('AMWS020'):
+        if not (model.startswith('AMWS020') or model == 'TSND151'):
             raise ProtocolError('Unsupported model: '+model)
         if self.request(0x3c,0xbc) != b'\x02':
             raise ProtocolError('Device already measuring; refusing to interrupt it')

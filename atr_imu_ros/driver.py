@@ -35,7 +35,7 @@ class Worker(threading.Thread):
 
     def loop(self):
         while not self.stopping.is_set():
-            sensor = self.sensor_factory(self.device.address,self.config['rfcomm_channel'],self.config['read_timeout'])
+            sensor = self.sensor_factory(self.device.address,self.device.channel or self.config['rfcomm_channel'],self.config['read_timeout'])
             clock = SensorClock()
             delay = self.config['reconnect_delay']
             self.update(state='connecting',message='Connecting',stop_confirmed=False,stop_error='')

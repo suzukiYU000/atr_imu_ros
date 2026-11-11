@@ -1,8 +1,8 @@
-# Connect all already-paired AMWS020 devices. Pair once using the OS Bluetooth UI.
+# Connect all already-paired AMWS020 / TSND151 devices. Pair once using the OS Bluetooth UI.
 auto_discover: true
 adapter: hci0
 sample_period_ms: 10
-rfcomm_channel: 2
+rfcomm_channel: 0  # Fallback for explicit devices without channel; discovery uses model defaults
 read_timeout: 5.0
 reconnect_delay: 3.0
 discovery_interval: 5.0
@@ -14,6 +14,7 @@ sensors: []
 #   - address: "AA:BB:CC:DD:EE:01"
 #     name: base
 #     frame_id: base_imu_link
+#     channel: 2  # AMWS020B (TSND151 uses 1)
 #   - address: "AA:BB:CC:DD:EE:02"
 #     name: arm
 #     frame_id: arm_imu_link
