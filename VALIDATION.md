@@ -27,9 +27,9 @@ A test initially exposed a delayed stop event incorrectly rejected by a status q
 
 ## Remaining limits
 
-- Two physical devices streaming simultaneously have not yet been tested; only one charged device was available.
+- Three physical devices produced concurrent ROS 2 data; TSND151 reliability remains limited as described below.
 - No hardware clock synchronization or long-duration drift evaluation.
-- TSND151 information queries succeeded, but live TSND151 samples are not yet verified. TSND121 and other firmware families are untested.
+- TSND151 live samples were received, but timestamp gaps and stop-response timeout were observed. TSND121 and other firmware families are untested.
 - Hardware tests used host networking and the host system DBus socket. Docker's default AppArmor profile blocked DBus access on this machine; only the temporary hardware-test container used `apparmor=unconfined`. This is not a requirement for native host operation or a blanket recommendation for deployment. Configure the narrow permissions appropriate to your environment.
 
 No raw measurements or device-specific addresses are included in this repository.
@@ -44,3 +44,10 @@ No raw measurements or device-specific addresses are included in this repository
 - Added tests for mixed-model discovery, channel resolution and ambiguous services, TSND model recognition, and the initial handshake retry. Both branches now pass 13 tests.
 - Subsequent live TSND151 attempts failed with Linux `EALREADY` (Operation already in progress), including an isolated host-side connection after the sensor was power-cycled. This is unresolved; do not interpret protocol support as a successful TSND live-stream test.
 - During the final Jazzy run, another AMWS020B produced 1,374 subscriber samples, all at 10 ms intervals; parser and sensor timing errors were zero, and device stop was confirmed. TSND151 produced no samples in that run.
+
+## Three-device hardware session (2026-11-11)
+
+- After power-cycling the host Bluetooth adapter, ROS 2 Jazzy received concurrent streams from two AMWS020B devices and one TSND151. Connection establishment was serialized in this diagnostic run only; the production worker implementation was unchanged. Serialization alone had not resolved the preceding connection errors.
+- During the 45-second window, AMWS020B subscribers received 4,207 and 4,054 samples respectively, with every received timestamp interval equal to 10 ms. Both sensor workers reported zero parser discards, zero timestamp gaps, and confirmed stop.
+- TSND151 delivered 1,829 samples, with 27 sensor timestamp gaps and a maximum subscriber timestamp interval of 2,730 ms. Its parser discarded zero bytes, but the shutdown stop response timed out. Three-device reception is verified; reliable 100 Hz delivery and confirmed stop for TSND151 are not.
+- Bluetooth adapter power cycling was a manual local recovery, not a driver action. It interrupts Bluetooth connections and is not automatically performed by the package.

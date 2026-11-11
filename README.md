@@ -7,11 +7,11 @@ ATR-Promotions **AMWS020 / TSND151**をLinuxからBluetooth SPPで読み出す�
 | `ros2-jazzy` | ROS 2 Jazzy / Python 3.12 | colcon / ament_python |
 | `ros1-noetic`（このブランチ） | ROS 1 Noetic / Python 3.8 | catkin |
 
-AMWS020BおよびTSND151の加速度・角速度プロトコルを実装しています。AMWS020Bは実測確認済み、TSND151は機器情報取得まで確認済みで、実データ配信は接続エラーのため未確認です。TSND121、生体信号、地磁気の配信は対象外です。
+AMWS020BおよびTSND151の加速度・角速度プロトコルを実装しています。ROS 2 JazzyでAMWS020B 2台とTSND151 1台の同時配信を確認済みです。ただしTSND151では受信時刻の欠落と停止応答のタイムアウトが観測されており、安定動作は未確認です。TSND121、生体信号、地磁気の配信は対象外です。
 
 ## 機能
 
-- OSで一度ペアリングしたAMWS020を自動検出。2台以上でも機器ごとに独立した接続・再接続処理
+- OSで一度ペアリングしたAMWS020 / TSND151を自動検出。2台以上でも機器ごとに独立した接続・再接続処理
 - 明示的な機器一覧、役割名、`frame_id` の指定も可能
 - 加速度m/s²・角速度rad/sで配信。推定していない姿勢は `orientation_covariance[0] = -1`
 - 通信のBCC検査、24 bit符号付き値の復元、センサ時計の日付またぎ処理
