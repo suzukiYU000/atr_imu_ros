@@ -46,7 +46,7 @@ ros2 launch atr_imu_ros imu.launch.py
 | `/imu/arm/data_raw` | `sensor_msgs/msg/Imu` | 別の機器の加速度・角速度 |
 | `/diagnostics` | `diagnostic_msgs/msg/DiagnosticArray` | 1 Hzの機器別診断 |
 
-ROS 2はSensor Data QoS（best effort、volatile、depth 5）です。名前空間を付ける場合、上記の相対トピックはその配下になります。
+ROS 2はSensor Data QoS（best effort、volatile、depth 50）です。名前空間を付ける場合、上記の相対トピックはその配下になります。
 
 ```sh
 ros2 topic list -t

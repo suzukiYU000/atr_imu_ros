@@ -3,7 +3,7 @@ import struct
 import threading
 import time
 import unittest
-from atr_imu_ros.protocol import Parser, packet, decode_imu, SensorClock, ProtocolError, MeasurementEnded
+from atr_imu_ros.protocol import Parser, packet, decode_imu, SensorClock, ProtocolError, MeasurementEnded, Sensor
 from atr_imu_ros.configuration import device, load_config
 from atr_imu_ros.driver import Manager, Worker
 
@@ -35,6 +35,17 @@ class ProtocolTests(unittest.TestCase):
         self.assertEqual(clock.stamp(20,9999999999,10),1030000000)
         self.assertEqual(clock.gaps,1)
         with self.assertRaises(ProtocolError): clock.stamp(19,0,10)
+
+    def test_stop_notification_before_status_response(self):
+        class Socket:
+            def sendall(self,data): pass
+        sensor=Sensor('00:11:22:33:44:55')
+        sensor.sock=Socket()
+        sensor.started=True
+        frames=iter([(0x8f,b'\x00'),(0x89,b'\x00'),(0xbc,b'\x02')])
+        sensor.frame=lambda timeout=None:next(frames)
+        sensor.stop()
+        self.assertFalse(sensor.started)
 
     def test_config_validation(self):
         import tempfile

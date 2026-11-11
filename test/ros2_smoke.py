@@ -4,7 +4,8 @@ from pathlib import Path
 import time
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import qos_profile_sensor_data
+from rclpy.qos import QoSProfile, ReliabilityPolicy
+qos_profile_sensor_data = QoSProfile(depth=50,reliability=ReliabilityPolicy.BEST_EFFORT)
 from sensor_msgs.msg import Imu
 from atr_imu_ros.node import ImuNode
 from atr_imu_ros.configuration import device

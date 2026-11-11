@@ -14,7 +14,7 @@ class Worker(threading.Thread):
         self.stopping = threading.Event()
         self.guard = threading.Lock()
         self.state = dict(state='waiting',message='Waiting to connect',samples=0,reconnects=0,
-                          last_sample=0.0,discarded_bytes=0,timestamp_gaps=0)
+                          last_sample=0.0,discarded_bytes=0,timestamp_gaps=0,stop_confirmed=False)
 
     def update(self, **values):
         with self.guard: self.state.update(values)
@@ -38,7 +38,7 @@ class Worker(threading.Thread):
             sensor = self.sensor_factory(self.device.address,self.config['rfcomm_channel'],self.config['read_timeout'])
             clock = SensorClock()
             delay = self.config['reconnect_delay']
-            self.update(state='connecting',message='Connecting')
+            self.update(state='connecting',message='Connecting',stop_confirmed=False,stop_error='')
             try:
                 sensor.connect()
                 if self.stopping.is_set(): break
@@ -69,12 +69,15 @@ class Worker(threading.Thread):
                 if isinstance(exc,MeasurementEnded) and exc.code == 3:
                     delay = max(delay,30.0)
             finally:
-                try: sensor.stop()
+                try:
+                    was_started = getattr(sensor,'started',False)
+                    sensor.stop()
+                    if was_started: self.update(stop_confirmed=True)
                 except Exception as exc: self.update(stop_error=str(exc))
                 sensor.close()
             if self.stopping.wait(delay): break
             self.update(reconnects=self.snapshot()['reconnects']+1)
-        self.update(state='stopped')
+        self.update(state='stopped',message='Driver stopped')
 
 class Manager:
     def __init__(self, config, on_sample, now_ns, discovery=None, worker_factory=Worker):

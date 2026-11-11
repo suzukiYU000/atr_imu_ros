@@ -2,7 +2,7 @@
 import threading
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import qos_profile_sensor_data
+from rclpy.qos import QoSProfile, ReliabilityPolicy
 from rclpy.time import Time
 from sensor_msgs.msg import Imu
 from diagnostic_msgs.msg import DiagnosticArray
@@ -27,7 +27,7 @@ class ImuNode(Node):
         with self.publisher_lock:
             if device.name not in self.publishers_by_name:
                 topic = self.config['topic_prefix']+'/'+device.name+'/data_raw'
-                self.publishers_by_name[device.name] = self.create_publisher(Imu,topic,qos_profile_sensor_data)
+                self.publishers_by_name[device.name] = self.create_publisher(Imu,topic,QoSProfile(depth=50,reliability=ReliabilityPolicy.BEST_EFFORT))
                 self.get_logger().info('Publishing '+topic)
             pub = self.publishers_by_name[device.name]
         pub.publish(imu_message(device,Time(nanoseconds=stamp_ns).to_msg(),acc,gyro))
