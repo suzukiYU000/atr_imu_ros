@@ -13,12 +13,13 @@ class Device:
     address: str
     name: str
     frame_id: str
+    channel: int = 0
 
-DEFAULTS = dict(auto_discover=True,adapter='hci0',sample_period_ms=10,rfcomm_channel=2,
+DEFAULTS = dict(auto_discover=True,adapter='hci0',sample_period_ms=10,rfcomm_channel=0,
                 reconnect_delay=3.0,discovery_interval=5.0,read_timeout=5.0,
                 topic_prefix='imu',sensors=[])
 
-def device(address,name=None,frame_id=None):
+def device(address,name=None,frame_id=None,channel=0):
     address = str(address).upper()
     if not MAC.fullmatch(address):
         raise ValueError('Invalid Bluetooth address: '+address)
@@ -28,7 +29,9 @@ def device(address,name=None,frame_id=None):
     frame_id = frame_id or name+'_link'
     if not re.fullmatch(r'[A-Za-z][A-Za-z0-9_/]*',frame_id):
         raise ValueError('Invalid frame_id: '+frame_id)
-    return Device(address,name,frame_id)
+    if type(channel) is not int or not 0 <= channel <= 30:
+        raise ValueError('channel must be 0 (auto) or 1..30')
+    return Device(address,name,frame_id,channel)
 
 def load_config(path=''):
     raw = yaml.safe_load(Path(path).read_text()) if path else {}
@@ -38,7 +41,7 @@ def load_config(path=''):
     if unknown: raise ValueError('Unknown config fields: '+str(unknown))
     c = dict(DEFAULTS,**raw)
     if type(c['auto_discover']) is not bool: raise ValueError('auto_discover must be boolean')
-    for key,lo,hi in [('sample_period_ms',1,255),('rfcomm_channel',1,30)]:
+    for key,lo,hi in [('sample_period_ms',1,255),('rfcomm_channel',0,30)]:
         if type(c[key]) is not int or not lo <= c[key] <= hi: raise ValueError('Invalid '+key)
     for key in ['reconnect_delay','discovery_interval','read_timeout']:
         if not isinstance(c[key],(int,float)) or not math.isfinite(c[key]) or not 0.1 <= c[key] <= 30:

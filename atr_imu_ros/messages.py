@@ -21,7 +21,7 @@ def diagnostics(manager,stamp):
     root.name = 'atr_imu_ros/discovery'
     root.hardware_id = 'bluetooth'
     root.level = DiagnosticStatus.WARN if manager.error or not entries else DiagnosticStatus.OK
-    root.message = manager.error or ('No paired AMWS020 devices found' if not entries else 'Sensors: '+str(len(entries)))
+    root.message = manager.error or ('No paired AMWS020 / TSND151 devices found' if not entries else 'Sensors: '+str(len(entries)))
     msg.status.append(root)
     for device,state in entries:
         item = DiagnosticStatus()

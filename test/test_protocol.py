@@ -3,7 +3,7 @@ import struct
 import threading
 import time
 import unittest
-from atr_imu_ros.protocol import Parser, packet, decode_imu, SensorClock, ProtocolError, MeasurementEnded, Sensor
+from atr_imu_ros.protocol import Parser, packet, decode_imu, SensorClock, ProtocolError, MeasurementEnded, Sensor, serial_channel
 from atr_imu_ros.configuration import device, load_config
 from atr_imu_ros.driver import Manager, Worker
 
@@ -46,6 +46,46 @@ class ProtocolTests(unittest.TestCase):
         sensor.frame=lambda timeout=None:next(frames)
         sensor.stop()
         self.assertFalse(sensor.started)
+
+    def test_spp_service_channel_resolution(self):
+        from unittest.mock import patch
+        from types import SimpleNamespace
+        for channel in [1,2]:
+            with patch('atr_imu_ros.protocol.subprocess.run',return_value=SimpleNamespace(returncode=0,stdout='Channel: '+str(channel))):
+                self.assertEqual(serial_channel('00:11:22:33:44:55'),channel)
+        with patch('atr_imu_ros.protocol.subprocess.run',return_value=SimpleNamespace(returncode=0,stdout='Channel: 1\nChannel: 2')):
+            with self.assertRaises(ProtocolError): serial_channel('00:11:22:33:44:55')
+
+    def test_tsnd_model_acceptance(self):
+        sensor=Sensor('00:11:22:33:44:55')
+        info=b'AP12345678'+bytes(10)+b'TSND151\x00\x00\x00'
+        responses={0x10:info,0x3c:b'\x02',0x3b:b'\x80\x01\x50',0x17:b'\x0a\x01\x00',0x16:b'\x00'}
+        sensor.request=lambda command,*args,**kwargs:responses[command]
+        self.assertEqual(sensor.configure(10)['model'],'TSND151')
+
+    def test_startup_handshake_retries_only_read_only_query(self):
+        sensor=Sensor('00:11:22:33:44:55')
+        calls=[]
+        info=b'AP12345678'+bytes(10)+b'TSND151\x00\x00\x00'
+        responses={0x10:info,0x3c:b'\x02',0x3b:b'\x80\x01\x50',0x17:b'\x0a\x01\x00',0x16:b'\x00'}
+        def request(command,*args,**kwargs):
+            calls.append(command)
+            if len(calls)==1: raise TimeoutError('SPP warming up')
+            return responses[command]
+        sensor.request=request
+        sensor.configure(10)
+        self.assertEqual(calls[:2],[0x10,0x10])
+        self.assertEqual(calls.count(0x16),1)
+
+    def test_mixed_model_discovery(self):
+        from atr_imu_ros.discovery import Discovery
+        class Objects:
+            def GetManagedObjects(self,**kwargs):
+                return {'/org/bluez/hci0/dev_'+str(i):{'org.bluez.Device1':{'Name':name,'Address':'00:11:22:33:44:0'+str(i),'Paired':paired}}
+                        for i,(name,paired) in enumerate([('AMWS020_RP00000001',True),('TSND151-AP00000002',True),('TSND151-AP00000003',False),('TSND121-AP00000004',True)])}
+        discovery=Discovery.__new__(Discovery);discovery.path='/org/bluez/hci0';discovery.manager=Objects()
+        self.assertEqual([d.name for d in discovery.devices()],['imu_rp00000001','imu_ap00000002'])
+        self.assertEqual([d.channel for d in discovery.devices()],[2,1])
 
     def test_config_validation(self):
         import tempfile

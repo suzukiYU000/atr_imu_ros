@@ -1,4 +1,4 @@
-"""List already-paired AMWS020 devices via BlueZ; never alter pairing."""
+"""List already-paired AMWS020 / TSND151 devices via BlueZ; never alter pairing."""
 import re
 import dbus
 from .configuration import device
@@ -14,9 +14,9 @@ class Discovery:
         for path, interfaces in self.manager.GetManagedObjects(timeout=3).items():
             p = interfaces.get('org.bluez.Device1',{})
             if not str(path).startswith(self.path+'/') or not p.get('Paired',False): continue
-            match = re.fullmatch(r'AMWS020_([A-Za-z0-9]+)',str(p.get('Name','')))
+            match = re.fullmatch(r'(AMWS020|TSND151)[_-]([A-Za-z0-9]+)',str(p.get('Name','')))
             if match:
-                result.append(device(str(p['Address']),'imu_'+match[1].lower()))
+                result.append(device(str(p['Address']),'imu_'+match[2].lower(),channel={'AMWS020':2,'TSND151':1}[match[1]]))
         return result
 
     def close(self):

@@ -17,7 +17,7 @@ class ImuNode:
         self.timer = rospy.Timer(rospy.Duration(1),self.publish_diagnostics)
         rospy.on_shutdown(self.close)
         self.manager.start()
-        rospy.loginfo('AMWS020 driver started; topic prefix: %s',self.config['topic_prefix'])
+        rospy.loginfo('ATR IMU driver started; topic prefix: %s',self.config['topic_prefix'])
 
     def publish_sample(self,device,stamp_ns,acc,gyro):
         with self.publisher_lock:
