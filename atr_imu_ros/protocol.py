@@ -109,7 +109,7 @@ class Sensor:
             code,data = self.frame(max(0.001,deadline-time.monotonic()))
             if code == 0x87:
                 raise ProtocolError('Sensor error '+data.hex())
-            if code == 0x89 and command != 0x15:
+            if code == 0x89 and command not in (0x15, 0x3c):
                 raise MeasurementEnded(data[0])
             if code == 0x8f and data != b'\x00':
                 raise ProtocolError('Command rejected: %02x'%command)

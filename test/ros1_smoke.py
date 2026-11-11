@@ -13,7 +13,7 @@ with tempfile.TemporaryDirectory() as temp:
     rospy.set_param('~config_file',str(config))
     driver=ImuNode()
     received={name:[] for name in ('base','arm')}
-    subscribers=[rospy.Subscriber('imu/'+name+'/data_raw',Imu,lambda msg,n=name:received[n].append(msg),queue_size=5) for name in received]
+    subscribers=[rospy.Subscriber('imu/'+name+'/data_raw',Imu,lambda msg,n=name:received[n].append(msg),queue_size=50) for name in received]
     try:
         deadline=time.monotonic()+8
         while time.monotonic()<deadline and not all(received.values()):

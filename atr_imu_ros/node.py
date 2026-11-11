@@ -23,7 +23,7 @@ class ImuNode:
         with self.publisher_lock:
             if device.name not in self.publishers_by_name:
                 topic = self.config['topic_prefix']+'/'+device.name+'/data_raw'
-                self.publishers_by_name[device.name] = rospy.Publisher(topic,Imu,queue_size=5)
+                self.publishers_by_name[device.name] = rospy.Publisher(topic,Imu,queue_size=50)
                 rospy.loginfo('Publishing %s',topic)
             pub = self.publishers_by_name[device.name]
         stamp=rospy.Time(stamp_ns//1000000000,stamp_ns%1000000000)

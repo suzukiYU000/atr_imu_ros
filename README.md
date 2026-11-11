@@ -46,7 +46,7 @@ roslaunch atr_imu_ros imu.launch
 | `/imu/arm/data_raw` | `sensor_msgs/Imu` | 別の機器の加速度・角速度 |
 | `/diagnostics` | `diagnostic_msgs/DiagnosticArray` | 1 Hzの機器別診断 |
 
-ROS 1のPublisherはqueue_size=5です。名前空間を付ける場合、上記の相対トピックはその配下になります。
+ROS 1のPublisherはqueue_size=50です。名前空間を付ける場合、上記の相対トピックはその配下になります。
 
 ```sh
 rostopic list
