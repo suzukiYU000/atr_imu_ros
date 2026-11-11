@@ -1,0 +1,6 @@
+<launch>
+  <arg name="config_file" default="$(find atr_imu_ros)/config/sensors.yaml"/>
+  <node pkg="atr_imu_ros" type="imu_node" name="atr_imu_ros" output="screen">
+    <param name="config_file" value="$(arg config_file)"/>
+  </node>
+</launch>

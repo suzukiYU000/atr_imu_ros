@@ -4,8 +4,8 @@ ATR-Promotions **AMWS020**をLinuxからBluetooth SPPで読み出す、複数IMU
 
 | ブランチ | 対象 | ビルド |
 |---|---|---|
-| `ros2-jazzy`（このブランチ） | ROS 2 Jazzy / Python 3.12 | colcon / ament_python |
-| `ros1-noetic` | ROS 1 Noetic / Python 3.8 | catkin |
+| `ros2-jazzy` | ROS 2 Jazzy / Python 3.12 | colcon / ament_python |
+| `ros1-noetic`（このブランチ） | ROS 1 Noetic / Python 3.8 | catkin |
 
 AMWS020Bの通信仕様を対象とします。TSND121/TSND151への対応は主張しません。
 
@@ -25,13 +25,13 @@ LinuxのBluetoothアダプターとBlueZが必要です。Bluetooth設定画面�
 ```sh
 mkdir -p ~/imu_ws/src
 cd ~/imu_ws/src
-git clone -b ros2-jazzy https://github.com/suzukiYU000/atr_imu_ros.git
+git clone -b ros1-noetic https://github.com/suzukiYU000/atr_imu_ros.git
 cd ~/imu_ws
-source /opt/ros/jazzy/setup.bash
+source /opt/ros/noetic/setup.bash
 rosdep install --from-paths src --ignore-src -r -y
-colcon build --symlink-install --packages-select atr_imu_ros
-source install/setup.bash
-ros2 launch atr_imu_ros imu.launch.py
+catkin_make
+source devel/setup.bash
+roslaunch atr_imu_ros imu.launch
 ```
 
 追加Python依存はディストリビューションの `python3-dbus` と `python3-yaml` です。Bluetooth用にBlueZもインストールしてください。rootでの常用は不要です。
@@ -42,18 +42,18 @@ ros2 launch atr_imu_ros imu.launch.py
 
 | トピック | 型 | 内容 |
 |---|---|---|
-| `/imu/base/data_raw` | `sensor_msgs/msg/Imu` | 加速度・角速度 |
-| `/imu/arm/data_raw` | `sensor_msgs/msg/Imu` | 別の機器の加速度・角速度 |
-| `/diagnostics` | `diagnostic_msgs/msg/DiagnosticArray` | 1 Hzの機器別診断 |
+| `/imu/base/data_raw` | `sensor_msgs/Imu` | 加速度・角速度 |
+| `/imu/arm/data_raw` | `sensor_msgs/Imu` | 別の機器の加速度・角速度 |
+| `/diagnostics` | `diagnostic_msgs/DiagnosticArray` | 1 Hzの機器別診断 |
 
-ROS 2はSensor Data QoS（best effort、volatile、depth 5）です。名前空間を付ける場合、上記の相対トピックはその配下になります。
+ROS 1のPublisherはqueue_size=5です。名前空間を付ける場合、上記の相対トピックはその配下になります。
 
 ```sh
-ros2 topic list -t
-ros2 topic echo /imu/base/data_raw --qos-reliability best_effort
-ros2 topic hz /imu/base/data_raw
-ros2 topic echo /diagnostics
-ros2 bag record /imu/base/data_raw /imu/arm/data_raw /diagnostics
+rostopic list
+rostopic echo /imu/base/data_raw
+rostopic hz /imu/base/data_raw
+rostopic echo /diagnostics
+rosbag record /imu/base/data_raw /imu/arm/data_raw /diagnostics
 ```
 
 TFは配信しません。取り付け位置・軸の向きに合うTFは利用側で設定してください。値はセンサ本体の座標軸のままです。加速度には重力を含みます。姿勢推定、重力除去、軸の補正を行いません。加速度・角速度の共分散は不明を表す全0です。
@@ -75,7 +75,7 @@ sensors:
 ```
 
 ```sh
-ros2 launch atr_imu_ros imu.launch.py config_file:=/absolute/path/to/sensors.yaml
+roslaunch atr_imu_ros imu.launch config_file:=/absolute/path/to/sensors.yaml
 ```
 
 `auto_discover: true` と明示設定を併用すると、明示機器の名前を優先し、その他のペアリング済みAMWS020も追加します。特定機器だけを使う場合は `false` にしてください。センサ名とframe_idは重複させないでください。
@@ -117,7 +117,8 @@ DockerではBluetoothソケット用のホストネットワークと、ホス�
 
 ```sh
 python3 -m unittest discover -s test -v
-python3 test/ros2_smoke.py
+roscore  # 別のターミナルで起動
+python3 test/ros1_smoke.py
 ```
 
 後者は合成データで2つの実ROSトピックを購読する検証です。機器を操作しません。ビルド・テスト結果と実機確認の範囲は [VALIDATION.md](VALIDATION.md) を参照してください。
