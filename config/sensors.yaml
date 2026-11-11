@@ -1,0 +1,19 @@
+# Connect all already-paired AMWS020 devices. Pair once using the OS Bluetooth UI.
+auto_discover: true
+adapter: hci0
+sample_period_ms: 10
+rfcomm_channel: 2
+read_timeout: 5.0
+reconnect_delay: 3.0
+discovery_interval: 5.0
+topic_prefix: imu
+sensors: []
+# For stable role names, explicitly configure devices; addresses here are examples.
+# Set auto_discover: false to connect only this allowlist.
+# sensors:
+#   - address: "AA:BB:CC:DD:EE:01"
+#     name: base
+#     frame_id: base_imu_link
+#   - address: "AA:BB:CC:DD:EE:02"
+#     name: arm
+#     frame_id: arm_imu_link
