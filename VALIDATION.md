@@ -17,7 +17,7 @@
 - `catkin_make run_tests` / `catkin_test_results`: **13 tests, 0 errors, 0 failures, 0 skipped**.
 - Two synthetic sensor streams received through the actual ROS 1 graph, checking message stamps, frame IDs, SI fields and orientation covariance.
 - Installed roslaunch entry point started and exited cleanly on SIGINT using a no-device configuration.
-- Live hardware through the ROS 1 adapter has not been tested; protocol and worker code are shared with the Jazzy branch.
+- On a second Linux PC using the existing Noetic image, the package built and all 13 tests passed. The real ROS 1 graph smoke test also passed. Two physical AMWS020B devices then streamed concurrently: 1,458 and 1,481 subscriber samples in a 15-second window, every sensor timestamp interval 10 ms. Both workers reported zero parser discards and timestamp gaps. TSND151 was paired and discovered but had not produced samples in that window.
 
 ## Regression coverage
 
